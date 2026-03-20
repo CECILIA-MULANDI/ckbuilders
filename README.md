@@ -29,6 +29,14 @@ This repository documents my hands-on learning of CKB (Common Knowledge Base); t
 
 ---
 
+## Weekly Reports
+
+| Week   | Report                        |
+| ------ | ----------------------------- |
+| Week 1 | [week-1.md](./week-1.md)      |
+
+---
+
 ## Projects
 
 ### Simple Transfer — [simple-transfer/](./simple-transfer/)
