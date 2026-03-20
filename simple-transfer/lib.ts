@@ -8,8 +8,14 @@ type Account = {
 };
 
 export const generateAccountFromPrivateKey = async (
-  privKey: string
+  privKey: string,
 ): Promise<Account> => {
+  // Signer object :{
+  // client:CccClient,
+  // privateKey: Byte32,
+  // publicKey: Byte32,
+  //
+  //}
   const signer = new ccc.SignerCkbPrivateKey(cccClient, privKey);
   const lock = await signer.getAddressObjSecp256k1();
 
@@ -31,7 +37,7 @@ export async function capacityOf(address: string): Promise<bigint> {
 export async function transfer(
   toAddress: string,
   amountInCKB: string,
-  signerPrivateKey: string
+  signerPrivateKey: string,
 ): Promise<string> {
   // Validate the sender
   const signer = new ccc.SignerCkbPrivateKey(cccClient, signerPrivateKey);
@@ -56,10 +62,11 @@ export async function transfer(
 
   // Complete missing parts for transaction
   await tx.completeInputsByCapacity(signer);
+  //  calculates the fee and if needed adds another input cell/ adjust an output to account for it await tx.completeFeeBy(signer, 1000);
   await tx.completeFeeBy(signer, 1000);
   const txHash = await signer.sendTransaction(tx);
   console.log(
-    `Go to explorer to check the sent transaction https://pudge.explorer.nervos.org/transaction/${txHash}`
+    `Go to explorer to check the sent transaction https://pudge.explorer.nervos.org/transaction/${txHash}`,
   );
 
   return txHash;

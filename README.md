@@ -4,28 +4,28 @@ A dev log tracking my progress through the [CKB Builders' track](https://github.
 
 ## About
 
-This repository documents my hands-on learning of CKB (Common Knowledge Base) — the layer 1 blockchain of the Nervos Network. Each project folder contains working code along with notes on what I built and what I learned.
+This repository documents my hands-on learning of CKB (Common Knowledge Base); the layer 1 blockchain of the Nervos Network. Each project folder contains working code along with notes on what I built and what I learned.
 
 ## Progress
 
 ### Beginner
 
-| Exercise | Status | Folder |
-|---|---|---|
-| Transfer CKB | Done | [simple-transfer](./simple-transfer/) |
-| Store Data on Cell | In progress | — |
-| Create Fungible Token | Not started | — |
-| Create DOB (Digital Object) | Not started | — |
-| Build a Simple Lock | Not started | — |
+| Exercise                    | Status      | Folder                                      |
+| --------------------------- | ----------- | ------------------------------------------- |
+| Transfer CKB                | Done        | [simple-transfer](./simple-transfer/)       |
+| Store Data on Cell          | Done        | [store-data-on-cell](./store-data-on-cell/) |
+| Create Fungible Token       | Not started | —                                           |
+| Create DOB (Digital Object) | Not started | —                                           |
+| Build a Simple Lock         | Not started | —                                           |
 
 ### Intermediate
 
-| Topic | Status |
-|---|---|
+| Topic                     | Status      |
+| ------------------------- | ----------- |
 | Script development course | Not started |
-| Simple UDTs (sUDT) | Not started |
-| Nervos DAO | Not started |
-| Spore (DOBs) | Not started |
+| Simple UDTs (sUDT)        | Not started |
+| Nervos DAO                | Not started |
+| Spore (DOBs)              | Not started |
 
 ---
 
@@ -35,21 +35,30 @@ This repository documents my hands-on learning of CKB (Common Knowledge Base) �
 
 A minimal dApp that connects a CKB wallet, displays the balance, and sends a CKB transfer on-chain.
 
-**Stack:** React, TypeScript, CCC (`@ckb-ccc/core`), Parcel
-
 **What I learned:**
+
 - How the CKB cell model works in practice
 - Using CCC (Common Chain Connector) to interact with wallets and broadcast transactions
 - The difference between lock scripts and type scripts at a basic level
+
+**Proof of completion:** [View transaction on explorer](https://testnet.explorer.nervos.org/transaction/0xc3a71dd081c3b73df34d667bd05f402e28dde81a4333e64ed91a78909d8d9afc)
 
 **Reference:** [Official tutorial](https://docs.nervos.org/docs/dapp/transfer-ckb)
 
 ---
 
-## Tools & Resources
+### Store Data on Cell — [store-data-on-cell/](./store-data-on-cell/)
 
-- [OffCKB](https://github.com/ckb-ecofund/offckb) — local dev environment
-- [CCC Playground](https://app.ckbccc.com) — browser-based testing
-- [CKB Academy](https://academy.ckb.dev) — structured lessons
-- [Testnet Faucet](https://faucet.nervos.org) — get testnet CKB
-- [CKB Debugger](https://github.com/nervosnetwork/ckb-debugger) — script debugging
+A dApp that writes and reads arbitrary data to/from a cell on the CKB blockchain.
+
+**What I learned:**
+
+- How to store data in the `data` field of a CKB cell
+- Reading cell data back from the chain
+- The lifecycle of a cell: creation, update, and consumption
+
+**Proof of completion:** [View transaction on explorer](https://testnet.explorer.nervos.org/transaction/0xacf26367645f894d04a32a8dcda26caacff9a6b2bd4c54ed475dd92e23e2680a)
+
+**Reference:** [Official tutorial](https://docs.nervos.org/docs/dapp/store-data-on-cell)
+
+---
