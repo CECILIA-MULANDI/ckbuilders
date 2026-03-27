@@ -26,8 +26,14 @@ export async function capacityOf(address: string): Promise<bigint> {
 }
 
 export async function issueToken(privKey: string, amount: string) {
+  // wrap pk with a signer object
+  // signer object : can help derive public key/address
+  //               : sign tx
+  //               : talk to CKB node via cccClient
   const signer = new ccc.SignerCkbPrivateKey(cccClient, privKey);
+  // derive Secp256k1 address and extract it's lock script(tells us who owns the cell/has authority to make changes)
   const lockScript = (await signer.getAddressObjSecp256k1()).script;
+  // Build token identity
   const xudtArgs = lockScript.hash() + "00000000";
 
   const typeScript = await ccc.Script.fromKnownScript(
@@ -37,15 +43,19 @@ export async function issueToken(privKey: string, amount: string) {
   );
 
   // Build the full transaction
+  // this is the output cell
+  // at this point we are creating the intended output
+  // we have no input yet
   const tx = ccc.Transaction.from({
     outputs: [{ lock: lockScript, type: typeScript }],
     outputsData: [ccc.numLeToBytes(amount, 16)],
   });
-
+  // adding cellDep
   await tx.addCellDepsOfKnownScripts(signer.client, ccc.KnownScript.XUdt);
 
   // additional 0.001 ckb for tx fee
   // Complete missing parts for transaction
+  //automatically finds cells with CKB capacity
   await tx.completeInputsByCapacity(signer);
   await tx.completeFeeBy(signer, 1000);
   const txHash = await signer.sendTransaction(tx);
@@ -65,6 +75,8 @@ export async function queryIssuedTokenCells(xudtArgs: Hex) {
 
   const collected: ccc.Cell[] = [];
   const collector = cccClient.findCellsByType(typeScript, true);
+  // send a query to CKB indexer node
+  //
   for await (const cell of collector) {
     collected.push(cell);
   }
@@ -120,6 +132,6 @@ export async function transferTokenToAddress(
   return { txHash, tx };
 }
 
-export function shannonToCKB(amount: bigint){
+export function shannonToCKB(amount: bigint) {
   return amount / 100000000n;
 }
