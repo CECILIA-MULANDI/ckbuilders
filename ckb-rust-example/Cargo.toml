@@ -1,0 +1,10 @@
+[package]
+name = "ckb-rust-example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ckb-sdk = "3.2.0"
+ckb-types = "0.200.0"
+secp256k1 = "0.30"
+serde_json = "1.0.149"
