@@ -32,7 +32,7 @@ ZK proofs are submitted in the transaction witness, verified by the script, then
 
 ## CKB Work: `agent-lock` Script
 
-**Location:** [https://github.com/CECILIA-MULANDI/spectre-protocol-ckb/tree/master/contracts/spectre-contracts](../spectre/contracts/spectre-contracts/agent-lock/)
+**Location:** [https://github.com/CECILIA-MULANDI/spectre-protocol-ckb/tree/master/contracts/spectre-contracts](https://github.com/CECILIA-MULANDI/spectre-protocol-ckb/tree/master/contracts/spectre-contracts)
 
 The first CKB script for Spectre is `agent-lock`, a Rust lock script that controls who can spend (or update) the agent cell. Written using `ckb-std` with native secp256k1 signature verification via the `k256` crate.
 
