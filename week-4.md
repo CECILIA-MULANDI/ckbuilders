@@ -6,7 +6,7 @@
 
 I shifted from tutorial exercises to project-driven learning. From here on, the CKB Builder Handbook curriculum is worked through via **Spectre Protocol**, a key recovery system for autonomous AI agents built on CKB. Each handbook topic is studied and immediately applied to the project.
 
-**Repo:** [github.com/CECILIA-MULANDI/spectre](https://github.com/CECILIA-MULANDI/spectre)
+**Repo:** [https://github.com/CECILIA-MULANDI/spectre-protocol-ckb/](https://github.com/CECILIA-MULANDI/spectre-protocol-ckb/)
 
 ## Project: Spectre Protocol
 
