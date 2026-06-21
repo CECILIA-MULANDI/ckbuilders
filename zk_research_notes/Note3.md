@@ -6,9 +6,9 @@
 
 [Note 2](https://talk.nervos.org/t/research-notes-what-zero-knowledge-proofs-enable-on-ckb/10368/2) closed on a question I had handed forward from [Note 1](https://talk.nervos.org/t/research-notes-what-zero-knowledge-proofs-enable-on-ckb/10368): how to layer privacy onto this design without breaking what already works. Before going there, I want to be honest about what I think the answer isn't.
 
-The current [voting PoC](https://github.com/XuJiandong/ckb-vote-poc) is designed for [Nervos DAO treasury governance](https://talk.nervos.org/t/pre-rfc-discussion-activating-the-nervos-dao-treasury/10143/18). In that context, public attribution is not a bug. It is a feature. Stake-weighted votes should be publicly tied to stakes. No voter should be in a position where they want to hide their decision and can't. I think privacy in that setting would actively undermine accountability.
+The current [voting PoC](https://github.com/XuJiandong/ckb-vote-poc) is designed for [Nervos DAO treasury governance](https://talk.nervos.org/t/pre-rfc-discussion-activating-the-nervos-dao-treasury/10143/18). In that context, public attribution is part of the design, not a missing feature. Each vote's legitimacy depends on its publicly verifiable tie to real on-chain stake. Adding privacy to that link would weaken the mechanism that makes the tally trustworthy.
 
-So I want to say upfront: the implementors made the right call for the use case they were building for. This note is not a privacy proposal for the existing design. It is a different question. The primitive underneath the voting PoC (zkVM-verified history proof over a block range) is general. It could serve other voting and governance applications. Some of those would need privacy. What would the primitive have to look like to serve them?
+So I want to say upfront: this note is not a privacy proposal for the existing design. It is a different question. The primitive underneath the voting PoC (zkVM-verified history proof over a block range) is general. It could serve other voting and governance applications. Some of those would need privacy. What would the primitive have to look like to serve them?
 
 That is the design space this note explores. The current implementation is the floor it is built on, not the target it is critiquing.
 
@@ -93,8 +93,6 @@ Where the line between primitive and application actually sits is the kind of qu
 - XuJiandong's voting PoC: [github.com/XuJiandong/ckb-vote-poc](https://github.com/XuJiandong/ckb-vote-poc).
 - Nervos DAO treasury discussion: [talk.nervos.org](https://talk.nervos.org/t/pre-rfc-discussion-activating-the-nervos-dao-treasury/10143/18).
 - MACI (Minimum Anti-Collusion Infrastructure): [github.com/privacy-scaling-explorations/maci](https://github.com/privacy-scaling-explorations/maci).
-- Semaphore: [semaphore.pse.dev](https://semaphore.pse.dev/).
-- My nullifiers explainer: [github.com/CECILIA-MULANDI/nullifiers](https://github.com/CECILIA-MULANDI/nullifiers).
 
 ---
 
