@@ -6,7 +6,7 @@
 
 [Note 2](https://talk.nervos.org/t/research-notes-what-zero-knowledge-proofs-enable-on-ckb/10368/2) closed on a question I had handed forward from [Note 1](https://talk.nervos.org/t/research-notes-what-zero-knowledge-proofs-enable-on-ckb/10368): how to layer privacy onto this design without breaking what already works. Before going there, I want to be honest about what I think the answer isn't.
 
-The current [voting PoC](https://github.com/XuJiandong/ckb-vote-poc) is designed for [Nervos DAO treasury governance](https://talk.nervos.org/t/pre-rfc-discussion-activating-the-nervos-dao-treasury/10143/18). In that context, public attribution is not a bug. It is a feature. If community funds are being spent, the spending decisions should be auditable. Stake-weighted votes should be publicly tied to stakes. No voter should be in a position where they want to hide their decision and can't. I think privacy in that setting would actively undermine accountability.
+The current [voting PoC](https://github.com/XuJiandong/ckb-vote-poc) is designed for [Nervos DAO treasury governance](https://talk.nervos.org/t/pre-rfc-discussion-activating-the-nervos-dao-treasury/10143/18). In that context, public attribution is not a bug. It is a feature. Stake-weighted votes should be publicly tied to stakes. No voter should be in a position where they want to hide their decision and can't. I think privacy in that setting would actively undermine accountability.
 
 So I want to say upfront: the implementors made the right call for the use case they were building for. This note is not a privacy proposal for the existing design. It is a different question. The primitive underneath the voting PoC (zkVM-verified history proof over a block range) is general. It could serve other voting and governance applications. Some of those would need privacy. What would the primitive have to look like to serve them?
 
@@ -58,7 +58,7 @@ This addresses all three leaks if done right. It requires more circuit work and 
 
 This addresses leaks (1) and (2) cleanly but changes the deposit mechanism fundamentally. The existing Nervos DAO interaction would have to be rewired through the pool, and there are liquidity questions (when can voters exit the pool?). It is a well-understood pattern from Tornado-style mixers, but in my read, a heavier change to the DAO model than the other two.
 
-None of these is a free upgrade. My honest reading is that adding privacy to a stake-weighted voting design is a redesign of the stake mechanism, not just the vote cell.
+None of these is a free upgrade. The vote cell is not the leak. The stake is. Any honest privacy proposal has to redesign how stake is represented and verified, not just how votes are recorded.
 
 ---
 
@@ -80,11 +80,11 @@ These changes don't have to land all at once. They are also separable from the v
 
 ## What I am taking from this
 
-I want this to land clearly: privacy is not the voting PoC's job. The treasury governance use case it was built for is a poor fit for privacy, and the implementors made the right call.
+I want this to land clearly: privacy is not the voting PoC's job. The design was built for treasury governance, where public attribution is the point, not the cost. Adding privacy to it would work against what makes the design fit its use case.
 
-The primitive underneath, though, has a separate life. It can serve voting applications with very different threat models. The privacy-needing use cases I listed are real. Adding privacy to those applications won't come from a small change to the voting design. It will come from a redesign of the stake mechanism plus targeted changes at the primitive layer.
+The primitive underneath, though, has a separate life. It can serve voting applications with very different threat models. The privacy-needing use cases I listed are real. Adding privacy to those applications won't come from a small change to the voting design. It will come from changing how stake is represented and verified, plus targeted changes at the primitive layer.
 
-I might be wrong about which changes matter most, and where the line between primitive and application actually sits. I would be glad to hear from anyone closer to the design. The point of this note was to name the design space, not close it.
+Where the line between primitive and application actually sits is the kind of question best worked out in conversation with people closer to the design. I would welcome that. The point of this note was to name the design space, not close it.
 
 ---
 
