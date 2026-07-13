@@ -245,5 +245,3 @@ If you're building a ZK application a nullifier-based privacy protocol, a ZK pro
 The shift from Polkadot to CKB is not a lateral move. The tooling is different, the mental model is different, and the composability story is different. But the underlying question CKB is answering how do you build a programmable UTXO chain where ownership is enforced by code rather than assumed by convention is a question worth understanding, whatever you end up building on.
 
 ---
-
-_Further reading: [CKB RFC on the Cell Model](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0002-ckb/0002-ckb.md) · [CKB Script Tutorial](https://docs.nervos.org/docs/script/intro-to-script) · [Lumos SDK](https://lumos.io/)_
