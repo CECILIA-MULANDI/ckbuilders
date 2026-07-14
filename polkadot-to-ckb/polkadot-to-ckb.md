@@ -12,7 +12,7 @@ If you're coming from Polkadot, this feels backwards. On Substrate, constructing
 
 So why does CKB hand you the keys and make you drive?
 
-The answer isn't that CKB has worse tooling or a steeper learning curve for its own sake. The answer is architectural: CKB and Polkadot have fundamentally different opinions about where logic should live and who should be responsible for state. On Polkadot, logic and state are fused a pallet owns its storage maps, the runtime owns all state transitions, the relay chain owns consensus. On CKB, they're separated entirely. Logic (scripts) and state (cells) are distinct objects that meet briefly at validation time and then go their separate ways. No script owns a cell. No runtime owns the chain's state. The developer constructs the transition because there is no runtime to delegate to.
+The answer isn't that CKB has worse tooling or a steeper learning curve for its own sake. The answer is architectural: CKB and Polkadot have fundamentally different opinions about where logic should live and who should be responsible for state. On Polkadot, logic and state are fused, a pallet owns its storage maps, the runtime owns all state transitions, the relay chain owns consensus. On CKB, they're separated entirely. Logic (scripts) and state (cells) are distinct objects that meet briefly at validation time and then go their separate ways. No script owns a cell. No runtime owns the chain's state. The developer constructs the transition because there is no runtime to delegate to.
 
 That separation is the article. Everything else the cell model, the script architecture, the querying model, the upgrade story follows from it.
 
@@ -24,7 +24,7 @@ Before getting into cells and scripts, it helps to make the Polkadot model expli
 
 Polkadot's development model rests on three fused layers:
 
-**The runtime is a single WASM binary.** Every pallet in your chain compiles into one WASM blob. That blob is the law: it defines every valid state transition, every callable function, every storage layout. Nodes execute that blob to agree on state. When you deploy a parachain, you're deploying a runtime. When you upgrade, you replace the runtime with a new WASM binary via governance forkless, because the upgrade itself is a valid state transition that the old runtime approves.
+**The runtime is a single WASM binary.** Every pallet in your chain compiles into one WASM blob. That blob is the law: it defines every valid state transition, every callable function, every storage layout. Nodes execute that blob to agree on state. When you deploy a parachain, you're deploying a runtime. When you upgrade, you replace the runtime with a new WASM binary through an on-chain governance vote. The upgrade is **forkless** no coordinated hard fork, no nodes going offline because the upgrade itself is just another state transition that the old runtime approves.
 
 **Pallets own their storage.** A `StorageMap` in a pallet isn't a raw database table that anyone can write to. It's namespaced to that pallet, and only that pallet's extrinsics and hooks can legitimately mutate it. There's no way for an external caller to reach into another pallet's storage and change a value without going through that pallet's defined API. Ownership is enforced by the Rust module system, at compile time.
 
@@ -71,6 +71,8 @@ pub fn transfer(origin: OriginFor<T>, to: T::AccountId, amount: u128) -> Dispatc
 
 The pallet reaches into storage and mutates it. It owns that storage. The mutation is the point.
 
+Now, what about those `lock_script` and `type_script` fields on a cell? Each one points to a RISC-V binary called a **script**. When a transaction is submitted, the CKB-VM runs the scripts referenced by every consumed and created cell, and each one gets to vote on whether the transaction is valid.
+
 On CKB, a script doesn't mutate anything. It's a **validator**. It receives a complete picture of the proposed transaction all inputs, all outputs, all cell data and returns either `0` (valid, let this through) or an error code (reject). It has no ability to reach out and change something. The state change is proposed by the transaction constructor (your wallet, your dapp, your SDK), and the scripts on the consumed/created cells decide whether to allow it.
 
 This is the fundamental shift: from **mutating programs** to **validating programs**.
@@ -108,7 +110,7 @@ The token amounts themselves live in the `data` field of cells, as raw bytes. Th
 
 When a Substrate developer asks "how do I build a token on CKB?" the instinct is to look for the equivalent of a pallet. There isn't one. What you build instead is a **Type Script**.
 
-The xUDT (extensible User Defined Token) standard is CKB's closest equivalent to ERC-20. It's not a contract with a state. It's a RISC-V binary that enforces one rule: the total token amount in inputs must be greater than or equal to the total token amount in outputs. Every cell carrying xUDT tokens references that binary as its Type Script. When you transfer tokens, the CKB-VM executes the xUDT binary as part of validating your transaction.
+The [xUDT (extensible User Defined Token)](https://docs.nervos.org/docs/assets-token-standards/xudt) standard is CKB's closest equivalent to ERC-20. It's not a contract with a state. It's a RISC-V binary that enforces one rule: the total token amount in inputs must be greater than or equal to the total token amount in outputs. Every cell carrying xUDT tokens references that binary as its Type Script. When you transfer tokens, the CKB-VM executes the xUDT binary as part of validating your transaction.
 
 The binary is deployed on-chain as a cell just data in a cell, no different in structure from any other cell. Other transactions reference it via `cellDeps`, which is how the CKB-VM knows where to load the script from at validation time.
 
@@ -123,6 +125,10 @@ CKB doesn't have this. There's no runtime to replace. There's no on-chain WASM b
 But the reason CKB doesn't need forkless upgrades is the same reason it doesn't need a runtime: **logic doesn't own state**. When you want to upgrade your token logic on CKB, you deploy a new Type Script binary and migrate existing cells to reference the new script. That migration is itself just a transaction consume the old cells, produce new cells pointing at the new Type Script. You can make it incremental. You can run old and new logic in parallel during a migration window. The "upgrade" is not a single atomic event that switches all behavior simultaneously; it's a series of cell transitions that you control.
 
 This is less ergonomic than Substrate's one-click runtime upgrade. It requires you to think carefully about migration. But it also means there's no single binary whose upgrade you have to push through governance before you can change behavior. Different cells can reference different versions of a script simultaneously. You don't have to convince an entire chain to upgrade; you just upgrade your own cells.
+
+### A Note for Solidity Developers
+
+If you're used to writing contracts for `pallet-revive` (or for any EVM chain), the shift is even sharper than for pallet writers. Your contract's owned storage (`mapping(address => uint) balances`), event emissions, and `msg.sender` don't map to CKB at all. What you'd write on CKB is a Type Script: a RISC-V validator that inspects the proposed transaction and returns `0` or an error. The equivalent of "your contract's balance" becomes "the sum of cells carrying your Type Script, in this specific transaction." No hidden state, no side effects, no reentrancy in the EVM sense because there's nothing to re-enter.
 
 ---
 
@@ -170,6 +176,8 @@ This is what a token transfer looks like from the dapp side on CKB:
 
 There's no "transfer" function. You're not calling into a contract. You're building the entire state transition yourself, proposing it to the network, and the network's validation layer (the scripts) either accepts or rejects it.
 
+Modern SDKs like [CCC (CKBers' Codebase)](https://docs.ckbccc.com/) provide helpers that pick input cells and calculate fees for you `tx.completeInputsByCapacity(signer)` and `tx.completeFeeBy(signer, feeRate)` handle the tedious parts. But you still declare the outputs by hand. The transaction, not a method call, remains the developer's unit of thought.
+
 This is closer to how a Bitcoin wallet works than how an Ethereum or Polkadot dapp works. The dapp developer is responsible for transaction construction, not just signing.
 
 ### Querying State
@@ -206,7 +214,7 @@ On Polkadot, access control to state is mostly handled by the runtime's origin s
 
 On CKB, ownership is enforced by the Lock Script on every cell, evaluated independently by every full node in the network. There's no runtime with privileged access. There's no "the contract allows this, so it's fine." If your Lock Script says a transaction requires signature X, then no transaction consuming that cell will be valid without signature X not because nodes are well-behaved, but because every node runs the script independently and rejects anything that fails.
 
-This makes ownership composable in ways that Polkadot's model isn't. You can put a cell under a multisig Lock Script that requires keys from two different parties, with no central contract coordinating. You can put a cell under a time-lock that opens after a certain block number. You can put a cell under a ZK-proof-based lock that only opens if the spender can prove membership in a set, without revealing which member. These are all just RISC-V programs. Any Rust or C code that compiles to RISC-V and returns 0 or an error is a valid Lock Script.
+This makes ownership composable in ways that Polkadot's model isn't. You can put a cell under a multisig Lock Script that requires keys from two different parties, with no central contract coordinating. You can put a cell under a time-lock that opens after a certain block number. These are all just RISC-V programs. Any Rust or C code that compiles to RISC-V and returns 0 or an error is a valid Lock Script.
 
 For dapp developers, this means the locking logic lives in the asset, not in a contract the dapp calls. When you're designing your application's access control, you're designing scripts that get embedded in cells, not functions you call on a contract.
 
@@ -230,18 +238,33 @@ But what you get in exchange is significant:
 
 **Composability is structural, not contractual.** On Polkadot, composing two pallets requires their types to align and their storage layouts to be compatible. On CKB, composing two scripts means building a transaction that satisfies both scripts simultaneously. The composition happens at the transaction level, not at the code level. You can compose scripts that were written independently, by different teams, without coordination.
 
-**Cryptography is not privileged.** CKB's native address format uses secp256k1 the same curve as Bitcoin and Ethereum. But secp256k1 is not hardcoded at the protocol level. It's implemented as a Lock Script in a system cell. JoyID's passkey-based wallet uses WebAuthn signatures instead, with a completely different Lock Script. A ZK-based account recovery protocol can use a proof system's verification key as a Lock Script. All of these are first-class citizens. There are no precompiles, no hard forks required, no permission needed.
+**Cryptography is not privileged.** CKB's native address format uses secp256k1 the same curve as Bitcoin and Ethereum. But secp256k1 is not hardcoded at the protocol level. It's implemented as a Lock Script in a system cell. [JoyID's](https://joy.id/) passkey-based wallet uses WebAuthn signatures instead, with a completely different Lock Script. Both are first-class citizens. There are no precompiles, no hard forks required, no permission needed.
 
 ---
 
-## Who Should Make the Jump
+## Why You Should Consider Making the Jump or Building on CKB
 
-If you're a Polkadot developer who has hit the friction of cross-parachain composability the complexity of XCM, the difficulty of building features that span multiple pallets on different chains CKB's cell model deserves serious attention. The transaction is the composition primitive. There's no protocol to route messages across; you just build a transaction that touches the relevant cells.
+CKB isn't a replacement for Polkadot, and it doesn't try to be. What it offers is a different set of primitives for a specific class of problems worth adding to your toolkit even if you keep shipping Polkadot code.
 
-If you're a Polkadot dapp developer who's tired of RPC abstraction hiding what's actually happening on-chain, CKB will feel uncomfortably transparent at first, and then clarifying. You will understand exactly what your dapp is doing at every step. There are no implicit state changes from an extrinsic you didn't fully audit.
+**Composition without cross-chain overhead.** If you've spent time with XCM routing assets or calls between parachains you know the design work involved. CKB's single-chain, cell-based model sidesteps that. An app that combines a token protocol, an identity protocol, and a governance protocol composes them by building one transaction that touches all the relevant cells. No message routing, no protocol overhead. The tradeoff is real: Polkadot's parachain model gives each domain its own sovereign execution environment, which CKB doesn't offer. But for apps that don't need domain sovereignty, the composition story is dramatically simpler.
 
-If you're building a ZK application a nullifier-based privacy protocol, a ZK proof verifier, a credential system CKB's architecture is worth understanding deeply. A ZK verifier is just a Type Script. It receives the transaction, reads the proof from a cell's data field, runs the verification logic (compiled to RISC-V), and returns 0 if the proof is valid. No precompile required. No gas limit that makes on-chain verification expensive at the base layer. The verification runs in CKB-VM, which is a real RISC-V processor.
+**Ownership as a first-class primitive.** On Polkadot, access control is mostly runtime-mediated: `ensure_signed(origin)?` and you're in. On CKB, ownership is the Lock Script on the cell, evaluated independently by every node. Multisig, time-locks, passkey-based auth ([JoyID](https://joy.id/)), or entirely custom access rules ship without touching a runtime or waiting on a governance upgrade. Polkadot doesn't really have an equivalent design surface for this.
 
-The shift from Polkadot to CKB is not a lateral move. The tooling is different, the mental model is different, and the composability story is different. But the underlying question CKB is answering how do you build a programmable UTXO chain where ownership is enforced by code rather than assumed by convention is a question worth understanding, whatever you end up building on.
+**A directly-inspectable execution model.** On CKB, a transaction body enumerates every cell it consumes and produces. No hidden side effects, no block-level runtime hooks mutating state you didn't ask for, no `on_initialize` firing under the hood. You still have to audit the scripts themselves (they're loaded from cellDeps, not inlined), but the state footprint of any transaction which cells changed, and how is fully visible in the transaction body. Substrate and PAPI are clean, but this explicit-state-footprint mental model pays off for audits, dapp security reviews, and protocol analysis.
+
+The shift from Polkadot to CKB is not a lateral move. The tooling is different, the mental model is different, and the composability story is different. But the question CKB is answering how do you build a programmable UTXO chain where every cell carries its own rules for who can spend it and how it can change is worth understanding, wherever you end up shipping code.
 
 ---
+
+## Further Reading & Getting Started
+
+**Official documentation**
+
+- [Nervos Docs](https://docs.nervos.org/) the main entry point
+- [Introduction to Nervos CKB](https://docs.nervos.org/docs/ckb-fundamentals/nervos-blockchain) basic technical concepts and terminology explained
+- [Getting started on CKB](https://docs.nervos.org/docs/getting-started/how-ckb-works) how CKB works, with hands-on setup
+
+**Community-contributed learning**
+
+- [Learning CKB](https://website-sooty-chi-72.vercel.app/lessons) 24 lessons across 5 phases
+- [Learn CKB in 45 mins](https://github.com/truthixify/learn-ckb-in-45-minutes) a fast tour repo
